@@ -1,0 +1,125 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seeker Registration</title>
+    <style>
+        /* Set background image for the entire body */
+        body {
+            font-family: Helvetica, sans-serif;
+            background-image: url("{% static 'images/background.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            padding: 50px 20px; /* Add padding at the top and bottom */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: auto;  /* Auto height to avoid stretching */
+            margin: 0;
+            color: white; /* Make text white to stand out against dark backgrounds */
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            max-width: 100%;
+            margin: 50px 0; /* Adds space between the container and the top and bottom of the page */
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: white; /* Ensure the title text is white */
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7); /* Add shadow to make title more readable */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #fff; /* Dark color for better visibility on light inputs */
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 350px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border: none;
+            width: 375px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input, .form-group select {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Seeker Registration</h1>
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_username">{{ form.username.label }}</label>
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                <label for="id_password">{{ form.password.label }}</label>
+                {{ form.password }}
+            </div>
+            <div class="form-group">
+                <label for="id_name">{{ form.name.label }}</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="id_email">{{ form.email.label }}</label>
+                {{ form.email }}
+            </div>
+            <div class="form-group">
+                <label for="id_mobile">{{ form.mobile.label }}</label>
+                {{ form.mobile }}
+            </div>
+            <div class="form-group">
+                <label for="id_age">{{ form.age.label }}</label>
+                {{ form.age }}
+            </div>
+            <div class="form-group">
+                <label for="id_role">{{ form.role.label }}</label>
+                <br>{{ form.role }}
+            </div>
+
+            <button type="submit">Save</button>
+        </form>
+         <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+    </div>
+
+</body>
+</html>
