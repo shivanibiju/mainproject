@@ -1,6 +1,5 @@
 {% load static %}
 
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -49,11 +48,15 @@
         }
 
         .form-group input {
-            width: 95%;
+            width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+        }
+
+        .messages {
+            color: red;
         }
 
         .form-group button {
@@ -104,6 +107,22 @@
         <!-- Form Section -->
         <div class="form-container">
             <h2>Seeker Login</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username">Username</label>
+                    {{ form.username }}
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    {{ form.password }}
+                </div>
+                <div class="form-group">
+                    <button type="submit">Login</button>
+                </div>
+            </form>
+
             {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -113,20 +132,6 @@
                 {% endfor %}
             </div>
         {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    {{ form.username }}
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    {{ form.password }}
-                </div>
-                <div class="form-group">
-                    <button type="submit">Login</button>
-                </div>
-            </form>
 
             {% if next %}
                 <p>Redirecting to: {{ next }}</p>

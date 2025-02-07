@@ -12,8 +12,9 @@
             padding: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* Changed from center to start to allow scrolling */
             height: 100vh;
+            overflow: auto; /* Allow body to scroll */
         }
         .container {
             background-color: white;
@@ -22,13 +23,15 @@
             max-width: 600px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
+            max-height: 90vh; /* Set maximum height */
+            overflow-y: auto; /* Allow scrolling within the container */
         }
         h2 {
             text-align: center;
             margin-bottom: 20px;
         }
         .search-bar {
-            width: 100%;
+            width: 96%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ddd;
@@ -59,7 +62,6 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>Search</h2>
         <form method="POST" action="{% url 'search' %}">
@@ -75,6 +77,11 @@
                     {% for result in results %}
                         <div class="result-item">
                             <h4>{{ result.title }}</h4>
+                            {% if result.profile_picture %}
+                                <div class="profile-picture">
+                                    <img src="{{ result.profile_picture.picture.url }}" alt="{{ result.title }}'s profile picture" style="width: 100px; height: 100px; object-fit: cover;">
+                                </div>
+                            {% endif %}
                             <p>{{ result.description }}</p>
                         </div>
                     {% endfor %}
@@ -84,6 +91,5 @@
             {% endif %}
         {% endif %}
     </div>
-
 </body>
 </html>
