@@ -4,8 +4,8 @@ from .models import TalentCategory
 from .models import Talent
 from .models import SkillProfile
 from .models import Seeker
+from .models import SearchHistory
 
-# Register your models here.
 @admin.register(ProfilePicture)
 class ProfilePictureAdmin(admin.ModelAdmin):
     list_display = ('picture', 'uploaded_at')
@@ -31,10 +31,16 @@ class SkillProfileAdmin(admin.ModelAdmin):
                     'achievements','experience','project_details_links',
                     'projects_worked','talent_description','talent',
                     'talent_category')
-    search_fields = ('talent_category',)
+    search_fields = ('talent_category__category_name',)
     list_filter = ('created_date','modified_date','talent_category')
 
 @admin.register(Seeker)
 class Seeker(admin.ModelAdmin):
     list_display = ('username','password','name','email','mobile','age','role')
     search_fields = ('name',)
+
+@admin.register(SearchHistory)
+class SearchHistory(admin.ModelAdmin):
+    list_display = ('query','timestamp')
+    list_filter = ('timestamp',)
+    search_fields = ('query',)

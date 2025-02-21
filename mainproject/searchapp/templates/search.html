@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,30 +8,49 @@
     <title>Search Interface</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            font-family: Helvetica, sans-serif;
+            background-image: url("{% static 'images/searchbg.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Changed from center to start to allow scrolling */
+            align-items: center; /* Center the container vertically */
             height: 100vh;
-            overflow: auto; /* Allow body to scroll */
+            overflow: auto;
         }
+
         .container {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.5);
             padding: 20px;
             width: 80%;
             max-width: 600px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            max-height: 90vh; /* Set maximum height */
-            overflow-y: auto; /* Allow scrolling within the container */
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column; /* Allow vertical stacking of elements */
+            align-items: center; /* Center align items inside the container */
         }
+
+        .welcome-message {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
         h2 {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .search-bar {
             width: 96%;
             padding: 10px;
@@ -38,6 +59,7 @@
             border-radius: 4px;
             margin-bottom: 20px;
         }
+
         .search-button {
             width: 100%;
             padding: 10px;
@@ -48,27 +70,44 @@
             font-size: 16px;
             cursor: pointer;
         }
+
         .search-button:hover {
             background-color: #0056b3;
         }
+
         .results {
             margin-top: 20px;
-            display: none; /* Initially hide the results section */
+            display: none;
         }
+
         .result-item {
             padding: 10px;
             border-bottom: 1px solid #ddd;
+        }
+
+        .profile-picture img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Search</h2>
+        <div class="welcome-message">
+            <h3>Welcome, seeker!</h3>
+        </div>
+        <h2>Enter search query here:</h2>
         <form method="POST" action="{% url 'search' %}">
             {% csrf_token %}
-            <input type="text" class="search-bar" name="query" placeholder="Enter search query..." required>
+            <input type="text" class="search-bar" name="query" placeholder="I am looking for..." required>
             <button type="submit" class="search-button">Search</button>
         </form>
+
+        <!-- Link to normal search page -->
+        <div style="text-align: center; margin-top: 10px;">
+            <a href="{% url 'normal_search' %}" style="color: #000000; text-decoration: none; font-size: 12px;"><u>Click here to go to NORMAL SEARCH</u></a>
+        </div>
 
         {% if search_query %}
             <h3>Search Results for: "{{ search_query }}"</h3>
@@ -76,13 +115,13 @@
                 <div id="results-list">
                     {% for result in results %}
                         <div class="result-item">
-                            <h4>{{ result.title }}</h4>
+                            <h4>{{ result.first_name }} {{ result.last_name }}</h4>
                             {% if result.profile_picture %}
                                 <div class="profile-picture">
-                                    <img src="{{ result.profile_picture.picture.url }}" alt="{{ result.title }}'s profile picture" style="width: 100px; height: 100px; object-fit: cover;">
+                                    <img src="{{ result.profile_picture.picture.url }}" alt="{{ result.title }}'s profile picture">
                                 </div>
                             {% endif %}
-                            <p>{{ result.description }}</p>
+                            <p>{{ result.talent_description }}</p>
                         </div>
                     {% endfor %}
                 </div>

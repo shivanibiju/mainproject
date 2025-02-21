@@ -22,6 +22,7 @@ from .views import register_view
 urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('search/', views.search_view, name='search'),
+    path('normal_search',views.normal_search_view, name='normal_search'),
     path('register/', views.register_view, name='register'),
 ]
 
