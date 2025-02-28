@@ -85,20 +85,42 @@
             background-color: #0056b3;
         }
 
-        /* Link styling */
-        .link {
-            text-align: center;
+        /* Talent Item Styling */
+        .talent-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .talent-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .talent-details {
+            flex: 1;
+        }
+
+        .talent-details h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .talent-details p {
+            margin: 10px 0 0;
+            font-size: 14px;
+        }
+
+        .talent-description {
+            font-size: 14px;
+            color: #ddd;
             margin-top: 10px;
-        }
-
-        .link a {
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 12px;
-        }
-
-        .link a:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
@@ -106,7 +128,9 @@
     <div class="container">
         <h2>Welcome, seeker!</h2>
         <p>Input your parameters below.</p>
-        <form method="POST" action="{% url 'normal_search' %}">
+
+        <!-- Search Form -->
+        <form method="POST" action="{% url 'normal_search_results' %}">
             {% csrf_token %}
 
             <!-- Category Dropdown -->
@@ -114,60 +138,81 @@
                 <label for="category">Category</label>
                 <select name="category" id="category" required>
                     <option value="">Select Category</option>
-                    {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.category_name }}</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id == selected_category %}selected{% endif %}>
+                                {{ category.category_name }}
+                            </option>
                     {% endfor %}
                 </select>
             </div>
 
-            <!-- Age and Gender in Same Line -->
+            <!-- Age (Min/Max) -->
             <div class="form-row">
-                <!-- Age Input -->
                 <div class="form-group">
-                    <label for="age">Age</label>
-                    <input type="number" name="age" id="age" min="1" placeholder="Enter age" required>
+                    <label for="min_age">Min Age</label>
+                    <input type="number" name="min_age" id="min_age" min="1" placeholder="Min Age" value="{{ request.POST.min_age }}">
                 </div>
 
-                <!-- Gender Dropdown -->
                 <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <select name="gender" id="gender" required>
-                        <option value="">Select Gender</option>
-                        {% for gender in genders %}
-                            <option value="{{ gender }}">{{ gender }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="max_age">Max Age</label>
+                    <input type="number" name="max_age" id="max_age" min="1" placeholder="Max Age" value="{{ request.POST.max_age }}">
                 </div>
             </div>
 
-            <!-- Height and Weight in Same Line -->
+            <!-- Gender Dropdown -->
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select name="gender" id="gender" required>
+                    <option value="">Select Gender</option>
+                        {% for gender in genders %}
+                            <option value="{{ gender }}" {% if gender == selected_gender %}selected{% endif %}>
+                                {{ gender }}
+                            </option>
+                        {% endfor %}
+                </select>
+            </div>
+
+            <!-- Height (Min/Max) -->
             <div class="form-row">
-                <!-- Height Input -->
                 <div class="form-group">
-                    <label for="height">Height (in cm)</label>
-                    <input type="number" name="height" id="height" min="0" placeholder="Enter height in cm" required>
+                    <label for="min_height">Min Height (cm)</label>
+                    <input type="number" name="min_height" id="min_height" min="0" placeholder="Min Height" value="{{ request.POST.min_height }}">
                 </div>
 
-                <!-- Weight Input -->
                 <div class="form-group">
-                    <label for="weight">Weight (in kg)</label>
-                    <input type="number" name="weight" id="weight" min="0" placeholder="Enter weight in kg" required>
+                    <label for="max_height">Max Height (cm)</label>
+                    <input type="number" name="max_height" id="max_height" min="0" placeholder="Max Height" value="{{ request.POST.max_height }}">
+                </div>
+            </div>
+
+            <!-- Weight (Min/Max) -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="min_weight">Min Weight (kg)</label>
+                    <input type="number" name="min_weight" id="min_weight" min="0" placeholder="Min Weight" value="{{ request.POST.min_weight }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="max_weight">Max Weight (kg)</label>
+                    <input type="number" name="max_weight" id="max_weight" min="0" placeholder="Max Weight" value="{{ request.POST.max_weight }}">
                 </div>
             </div>
 
             <!-- Experience Input -->
             <div class="form-group">
-                <label for="experience">Experience (in years)</label>
-                <input type="number" name="experience" id="experience" min="0" placeholder="Enter experience in years" required>
+                <label for="experience">Min Experience (years)</label>
+                <input type="number" name="experience" id="experience" min="0" placeholder="Min Experience" value="{{ request.POST.experience }}">
             </div>
 
-            <!-- Location Dropdown (Address renamed to Location) -->
+            <!-- Location Dropdown -->
             <div class="form-group">
                 <label for="location">Location</label>
                 <select name="location" id="location" required>
                     <option value="">Select Location</option>
-                    {% for address in addresses %}
-                        <option value="{{ address }}">{{ address }}</option>
+                        {% for address in addresses %}
+                            <option value="{{ address }}" {% if address == selected_location %}selected{% endif %}>
+                                {{ address }}
+                            </option>
                     {% endfor %}
                 </select>
             </div>
@@ -176,10 +221,45 @@
             <button type="submit" class="submit-button">Search</button>
         </form>
 
-        <!-- Link to free text search page -->
-        <div class="link">
-            <a href="{% url 'search' %}"><u>Click here to go to FREE-TEXT SEARCH</u></a>
+        <!-- Link to free-text search page -->
+        <div style="text-align: center; margin-top: 10px;">
+            <a href="{% url 'search' %}" style="color: #ffffff; text-decoration: none; font-size: 12px;"><u>Click here to go to FREE-TEXT SEARCH</u></a>
         </div>
+
+        <!-- Display Search Results -->
+        {% if talents %}
+            <h3>Search Results:</h3>
+            {% for talent in talents %}
+                <div class="talent-item">
+                    <!-- Display Profile Picture -->
+                    {% if talent.profile_picture %}
+                        <img src="{{ talent.profile_picture.picture.url }}" alt="Profile Picture">
+                    {% else %}
+                        <img src="{% static 'images/default.jpg' %}" alt="Default Image">
+                    {% endif %}
+
+                    <!-- Display Talent Details -->
+                    <div class="talent-details">
+                        <h3>{{ talent.first_name }} {{ talent.last_name }}</h3>
+                        <p><strong>Age:</strong> {{ talent.age }}</p>
+                        <p><strong>Gender:</strong> {{ talent.gender }}</p>
+                        <p><strong>Location:</strong> {{ talent.address }}</p>
+                        <p><strong>Height:</strong> {{ talent.height_in_cm }} cm</p>
+                        <p><strong>Weight:</strong> {{ talent.weight_in_kg }} kg</p>
+                        <p><strong>Experience:</strong> {{ talent.experience }} years</p>
+
+                        <div class="talent-description">
+                            <strong>Description:</strong>
+                            <p>{{ talent.talent_description }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            {% if request.method == 'POST' %}
+                <p>No talents found for your search criteria.</p>
+            {% endif %}
+        {% endif %}
     </div>
 </body>
 </html>

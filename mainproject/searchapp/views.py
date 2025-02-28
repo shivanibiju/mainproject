@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Seeker, Talent, SearchHistory, TalentCategory
+from .models import Seeker, Talent, SearchHistory, TalentCategory, ProfilePicture
 from .forms import SeekerForm, LoginForm
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
@@ -25,6 +25,102 @@ def normal_search_view(request):
         'categories': categories,
         'genders': genders,
         'addresses': addresses,
+    })
+
+
+
+def normal_search_results(request):
+    # Fetch all categories to populate the dropdown
+    categories = TalentCategory.objects.all()
+
+    # Initialize filters dictionary
+    filters = {}
+
+    # Initialize variables to store selected filters
+    selected_category = None
+    selected_gender = None
+    selected_location = None
+    talents = None
+
+    # Retrieve the filter values from the form
+    if request.method == 'POST':
+        selected_category = request.POST.get('category')
+        selected_gender = request.POST.get('gender')
+        selected_location = request.POST.get('location')
+
+        min_age = request.POST.get('min_age')
+        max_age = request.POST.get('max_age')
+        min_height = request.POST.get('min_height')
+        max_height = request.POST.get('max_height')
+        min_weight = request.POST.get('min_weight')
+        max_weight = request.POST.get('max_weight')
+        min_experience = request.POST.get('experience')
+
+        # Initialize filter conditions
+        filter_conditions = Q()
+
+        # Apply gender filter
+        if selected_gender:
+            filter_conditions &= Q(gender=selected_gender)
+            filters['Gender'] = selected_gender
+
+        # Apply category filter
+        if selected_category:
+            filter_conditions &= Q(skillprofile__talent_category_id=selected_category)
+            filters['Category'] = TalentCategory.objects.get(id=selected_category).category_name
+
+        # Apply location filter
+        if selected_location:
+            filter_conditions &= Q(address=selected_location)
+            filters['Location'] = selected_location
+
+        # Apply min/max age filters
+        if min_age:
+            filter_conditions &= Q(age__gte=min_age)
+            filters['Min Age'] = min_age
+        if max_age:
+            filter_conditions &= Q(age__lte=max_age)
+            filters['Max Age'] = max_age
+
+        # Apply min/max height filters
+        if min_height:
+            filter_conditions &= Q(height_in_cm__gte=min_height)
+            filters['Min Height'] = min_height
+        if max_height:
+            filter_conditions &= Q(height_in_cm__lte=max_height)
+            filters['Max Height'] = max_height
+
+        # Apply min/max weight filters
+        if min_weight:
+            filter_conditions &= Q(weight_in_kg__gte=min_weight)
+            filters['Min Weight'] = min_weight
+        if max_weight:
+            filter_conditions &= Q(weight_in_kg__lte=max_weight)
+            filters['Max Weight'] = max_weight
+
+        # Apply experience filter
+        if min_experience:
+            filter_conditions &= Q(experience__gte=min_experience)
+            filters['Min Experience'] = min_experience
+
+        # Fetch talents based on the filter conditions
+        talents = Talent.objects.filter(filter_conditions).distinct()
+
+        # Print the applied filters in the Python terminal (for debugging purposes)
+        if filters:
+            print("Applied Filters:")
+            for filter_name, filter_value in filters.items():
+                print(f"{filter_name}: {filter_value}")
+
+    # Return the filtered results to the template, including the categories, gender, location, and selected filters
+    return render(request, 'normal_search.html', {
+        'categories': categories,
+        'genders': Talent.objects.values_list('gender', flat=True).distinct(),  # Get all distinct genders
+        'addresses': Talent.objects.values_list('address', flat=True).distinct(),  # Get all distinct locations
+        'talents': talents,
+        'selected_category': selected_category,
+        'selected_gender': selected_gender,
+        'selected_location': selected_location,
     })
 
 
@@ -87,34 +183,67 @@ def search_view(request):
     return render(request, 'search.html')
 
 
+from textblob import TextBlob
+import re
+from nltk.corpus import stopwords
+
+# A predefined whitelist of terms that should not be corrected
+WHITELIST_TERMS = {"dubbing","kochi"}
+
+def correct_term(term):
+    """Corrects spelling of a term, unless it's in the whitelist."""
+    # If the term is in the whitelist, don't apply any corrections
+    if term.lower() in WHITELIST_TERMS:
+        return term
+    # Otherwise, apply spell correction using TextBlob
+    return str(TextBlob(term).correct())
+
 def interpret_query(query):
-    # Interprets the query to extract structured filters and descriptive terms.
+    # # Perform spell correction on the query
+    # blob = TextBlob(query)
+    # corrected_query = str(blob.correct())
+
+    corrected_query = correct_term(query)
 
     # Get the stopwords from nltk
     STOPWORDS = set(stopwords.words('english'))
 
-    gender = re.search(r'\b(male|female|man|woman|boy|girl|males|females|women|men)\b', query, re.IGNORECASE)
+    # Gender search pattern
+    gender = re.search(r'\b(male|female|man|woman|boy|girl|males|females|women|men)\b', corrected_query, re.IGNORECASE)
+
+    # Age range search pattern
     age_range = re.search(
         r'\bage\s*(>=|<=|>|<|under|is under|over|is over|between|is between|above|is above|below|is below)?\s*(\d+)(?:\s*and\s*(\d+))?',
-        query, re.IGNORECASE
+        corrected_query, re.IGNORECASE
     )
+
+    # Height range search pattern
     height_range = re.search(
         r'\bheight\s*(>=|<=|>|<|between|is between|above|is above|below|is below)?\s*(\d+)(?:\s*and\s*(\d+))?\s*(cm)?\b',
-        query, re.IGNORECASE
+        corrected_query, re.IGNORECASE
     )
+
+    # Weight range search pattern
     weight_range = re.search(
         r'\bweight\s*(>=|<=|>|<|between|is between|above|is above|below|is below)?\s*(\d+)(?:\s*and\s*(\d+))?\s*(kg)?\b',
-        query, re.IGNORECASE
+        corrected_query, re.IGNORECASE
     )
-    address = re.search(r'\b(?:living in|lives in|located in|address is)\s*([\w\s]+)', query, re.IGNORECASE)
-    profession = re.search(r'\b(?:male|female|who is an|who is a|profession is|works as)\s+(\w+)', query, re.IGNORECASE)
+
+    # Address search pattern
+    address = re.search(r'\b(?:living in|lives in|located in|address is)\s*([\w\s]+)', corrected_query, re.IGNORECASE)
+
+    # Profession search pattern
+    profession = re.search(r'\b(?:male|female|who is an|who is a|who is|profession is|works as)\s+(\w+)', query,
+                           re.IGNORECASE)
+
+    # Experience search pattern
     experience = re.search(r'\bexperience\s*(>=|<=|>|<|more\s*than|less\s*than|over|under)?\s*(\d+)\s*(years?|yrs?)\b',
-                           query, re.IGNORECASE)
+                           corrected_query, re.IGNORECASE)
 
     # Extract descriptive terms excluding stopwords
     words = query.split()
     descriptive_terms = [
-        word.lower() for word in words if word.lower() not in STOPWORDS and len(word) > 2
+        correct_term(word.lower()) for word in words if word.lower() not in STOPWORDS and len(word) > 2
     ]
 
     # Initialize filters
@@ -130,6 +259,7 @@ def interpret_query(query):
         'descriptions': descriptive_terms,
     }
 
+    # Age filter logic
     if age_range:
         operator = age_range.group(1)
         if operator in ["under", "<"]:
@@ -155,17 +285,16 @@ def interpret_query(query):
         else:
             filters["age"] = ("=", int(age_range.group(2)))
 
+    # Height filter logic
     if height_range:
         operator = height_range.group(1)
         if operator in ["below", "<"]:
             filters["height"] = ("<", int(height_range.group(2)))
         elif operator in ["is below", "<"]:
             filters["height"] = ("<", int(height_range.group(2)))
-        elif operator in ["below", "<"]:
-            filters["height"] = ("<", int(height_range.group(2)))
-        elif operator in ["above", ">"]:
+        elif operator == "above" and height_range.group(2):
             filters["height"] = (">", int(height_range.group(2)))
-        elif operator in ["is above", ">"]:
+        elif operator == "is above" and height_range.group(2):
             filters["height"] = (">", int(height_range.group(2)))
         elif operator == "between" and height_range.group(3):
             filters["height"] = (int(height_range.group(2)), int(height_range.group(3)))
@@ -174,17 +303,16 @@ def interpret_query(query):
         else:
             filters["height"] = ("=", int(height_range.group(2)))
 
+    # Weight filter logic
     if weight_range:
         operator = weight_range.group(1)
         if operator in ["below", "<"]:
             filters["weight"] = ("<", int(weight_range.group(2)))
         elif operator in ["is below", "<"]:
             filters["weight"] = ("<", int(weight_range.group(2)))
-        elif operator in ["below", "<"]:
-            filters["weight"] = ("<", int(weight_range.group(2)))
-        elif operator in ["above", ">"]:
+        elif operator == "above" and weight_range.group(2):
             filters["weight"] = (">", int(weight_range.group(2)))
-        elif operator in ["is above", ">"]:
+        elif operator == "is above" and weight_range.group(2):
             filters["weight"] = (">", int(weight_range.group(2)))
         elif operator == "between" and weight_range.group(3):
             filters["weight"] = (int(weight_range.group(2)), int(weight_range.group(3)))
@@ -193,6 +321,7 @@ def interpret_query(query):
         else:
             filters["weight"] = ("=", int(weight_range.group(2)))
 
+    # Experience filter logic
     if experience:
         operator = experience.group(1)
         years = int(experience.group(2))
@@ -217,6 +346,7 @@ def interpret_query(query):
             filters["experience"] = years
 
     return filters
+
 
 
 def build_dynamic_query(filters):
@@ -285,21 +415,28 @@ def build_dynamic_query(filters):
 
     # Handle address
     if filters.get("address"):
-        query &= Q(address__icontains=filters["address"])
+        # Apply spell correction to address term, except for whitelist terms
+        corrected_address = correct_term(filters["address"])
+        query &= Q(address__icontains=corrected_address)
 
     # Handle profession
     if filters.get("profession"):
-        # Search for profession in the related TalentCategory's category_name field through SkillProfile
-        query &= Q(skillprofile__talent_category__category_name__icontains=filters["profession"])
+        # Apply spell correction to profession term, except for whitelist terms
+        corrected_profession = correct_term(filters["profession"])
+        query &= Q(skillprofile__talent_category__category_name__icontains=corrected_profession)
 
-    # # Handle descriptive terms
-    # if filters.get("descriptions"):
-    #     for term in filters["descriptions"]:
-    #         query |= (
-    #                 Q(talent_description__icontains=term) |
-    #                 Q(skillprofile__achievements__icontains=term) |
-    #                 Q(skillprofile__talent_category__category_name__icontains=term)
-    #         )
+    # Handle descriptive terms
+    if filters.get("descriptions"):
+        for term in filters["descriptions"]:
+            # Apply spell correction to each term, except for whitelist terms
+            corrected_term = correct_term(term)
+
+            # # Use regex with word boundaries (\b) to ensure we match the term as a whole word
+            # query |= (
+            #         Q(talent_description__regex=r'\b' + re.escape(corrected_term) + r'\b') |
+            #         Q(skillprofile__achievements__regex=r'\b' + re.escape(corrected_term) + r'\b') |
+            #         Q(skillprofile__talent_category__category_name__regex=r'\b' + re.escape(corrected_term) + r'\b')
+            # )
 
     # Now apply the query to the Talent model to fetch the matching profiles
     results = Talent.objects.filter(query)
@@ -307,3 +444,4 @@ def build_dynamic_query(filters):
     print("Constructed Query:", query)
 
     return results
+

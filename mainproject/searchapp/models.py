@@ -86,3 +86,4 @@ class SearchHistory(models.Model):
 
     class Meta:
         db_table = 'SearchHistory'
+
