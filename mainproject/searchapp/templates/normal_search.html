@@ -28,8 +28,8 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             position: absolute;
-            top: 20px; /* Fixed the container’s top position */
-            left: 20px; /* Ensure it is placed to the left */
+            top: 20px;
+            left: 20px;
         }
 
         h2 {
@@ -58,7 +58,7 @@
 
         .form-group input {
             margin-top: 5px;
-            box-sizing: border-box; /* Ensures padding is included in width calculation */
+            box-sizing: border-box;
         }
 
         .form-row {
@@ -67,7 +67,7 @@
         }
 
         .form-row .form-group {
-            width: 48%; /* Each field takes up almost half of the row */
+            width: 48%;
         }
 
         .submit-button {
@@ -85,7 +85,6 @@
             background-color: #0056b3;
         }
 
-        /* Talent Item Styling */
         .talent-item {
             display: flex;
             align-items: center;
@@ -133,15 +132,15 @@
         <form method="POST" action="{% url 'normal_search_results' %}">
             {% csrf_token %}
 
-            <!-- Category Dropdown -->
+            <!-- Category Dropdown (Mandatory) -->
             <div class="form-group">
                 <label for="category">Category</label>
                 <select name="category" id="category" required>
                     <option value="">Select Category</option>
-                        {% for category in categories %}
-                            <option value="{{ category.id }}" {% if category.id == selected_category %}selected{% endif %}>
-                                {{ category.category_name }}
-                            </option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category.id == selected_category %}selected{% endif %}>
+                            {{ category.category_name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -162,13 +161,13 @@
             <!-- Gender Dropdown -->
             <div class="form-group">
                 <label for="gender">Gender</label>
-                <select name="gender" id="gender" required>
+                <select name="gender" id="gender">
                     <option value="">Select Gender</option>
-                        {% for gender in genders %}
-                            <option value="{{ gender }}" {% if gender == selected_gender %}selected{% endif %}>
-                                {{ gender }}
-                            </option>
-                        {% endfor %}
+                    {% for gender in genders %}
+                        <option value="{{ gender }}" {% if gender == selected_gender %}selected{% endif %}>
+                            {{ gender }}
+                        </option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -207,12 +206,12 @@
             <!-- Location Dropdown -->
             <div class="form-group">
                 <label for="location">Location</label>
-                <select name="location" id="location" required>
+                <select name="location" id="location">
                     <option value="">Select Location</option>
-                        {% for address in addresses %}
-                            <option value="{{ address }}" {% if address == selected_location %}selected{% endif %}>
-                                {{ address }}
-                            </option>
+                    {% for address in addresses %}
+                        <option value="{{ address }}" {% if address == selected_location %}selected{% endif %}>
+                            {{ address }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
