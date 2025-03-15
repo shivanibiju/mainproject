@@ -1,5 +1,3 @@
-# Create your models here.
-
 from django.db import models
 
 class ProfilePicture(models.Model):
@@ -87,3 +85,10 @@ class SearchHistory(models.Model):
     class Meta:
         db_table = 'SearchHistory'
 
+class TalentLogin(models.Model):
+    username = models.CharField(max_length=100)
+    password = models.CharField(max_length=100)
+    talent = models.ForeignKey(Talent, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        db_table = 'TalentLogin'

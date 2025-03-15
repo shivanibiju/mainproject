@@ -5,6 +5,7 @@ from .models import Talent
 from .models import SkillProfile
 from .models import Seeker
 from .models import SearchHistory
+from .models import TalentLogin
 
 @admin.register(ProfilePicture)
 class ProfilePictureAdmin(admin.ModelAdmin):
@@ -44,3 +45,8 @@ class SearchHistory(admin.ModelAdmin):
     list_display = ('query','timestamp')
     list_filter = ('timestamp',)
     search_fields = ('query',)
+
+@admin.register(TalentLogin)
+class TalentLogin(admin.ModelAdmin):
+    list_display = ('username','password')
+    search_fields = ('username',)

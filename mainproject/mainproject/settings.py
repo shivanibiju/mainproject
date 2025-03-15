@@ -137,3 +137,9 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+]
+
+LOGIN_REDIRECT_URL = 't_home'  # Redirect after successful login
