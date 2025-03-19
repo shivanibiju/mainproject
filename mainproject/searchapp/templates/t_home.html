@@ -1,4 +1,5 @@
-{% extends 'base.html' %}
+
+{% load static %}
 
 {% block content %}
     {% if messages %}
@@ -10,65 +11,152 @@
             {% endfor %}
         </div>
     {% endif %}
+
     <div class="container">
+        <!-- Display User Profile -->
         <h1 class="profile-header">{{ talent.first_name }} {{ talent.last_name }}'s Profile</h1>
 
-        <!-- Talent Profile Form -->
-        <div class="profile-section">
+        <!-- Display Profile Information in a Box -->
+        <div class="profile-info-box">
+            <h2>Profile Information</h2>
+            <p><strong>First Name:</strong> {{ talent.first_name }}</p>
+            <p><strong>Last Name:</strong> {{ talent.last_name }}</p>
+            <p><strong>Mobile:</strong> {{ talent.mobile }}</p>
+            <p><strong>Age:</strong> {{ talent.age }}</p>
+            <p><strong>Experience:</strong> {{ talent.experience }} years</p>
+            <p><strong>Gender:</strong> {{ talent.gender }}</p>
+            <p><strong>Address:</strong> {{ talent.address }}</p>
+            <p><strong>Description:</strong> {{ talent.talent_description }}</p>
+
+            <!-- Display Profile Picture -->
+            <div class="profile-picture-section">
+                {% if talent.profile_picture %}
+                    <img src="{{ talent.profile_picture.picture.url }}" alt="Profile Picture" class="profile-picture">
+                {% else %}
+                    <img src="{% static 'images/default.jpg' %}" alt="Default Profile Picture" class="profile-picture">
+                {% endif %}
+            </div>
+
+            <!-- Edit and Delete Profile Buttons -->
+            <div class="profile-actions">
+                <form method="POST" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" name="edit_profile" class="btn btn-warning">Edit Profile</button>
+                </form>
+                <form method="POST" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" name="delete_profile" class="btn btn-danger">Delete Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Talent Profile Edit Form (Initially Hidden) -->
+        <div class="profile-edit-form" style="display: none;">
             <h2>Edit Your Profile</h2>
             <form method="POST">
                 {% csrf_token %}
                 {{ talent_form.as_p }}
-                <button type="submit" name="edit_profile" class="btn btn-primary">Save Profile</button>
+                <button type="submit" name="save_profile" class="btn btn-primary">Save Profile</button>
             </form>
         </div>
 
-        <!-- Delete Profile -->
-        <div class="profile-section">
-            <form method="POST">
-                {% csrf_token %}
-                <button type="submit" name="delete_profile" class="btn btn-danger">Delete Profile</button>
-            </form>
-        </div>
+<!--        &lt;!&ndash; Skill Profiles Section &ndash;&gt;-->
+<!--        <div class="skill-profiles-section">-->
+<!--            <h2>Your Skill Profiles</h2>-->
 
-        <!-- Skill Profiles Section -->
-        <div class="skill-profiles-section">
-            <h2>Your Skill Profiles</h2>
+<!--            &lt;!&ndash; Display Existing Skill Profiles &ndash;&gt;-->
+<!--            <ul class="skill-profile-list">-->
+<!--                {% for profile in skill_profiles %}-->
+<!--                    <li class="skill-profile-item">-->
+<!--                        <div>-->
+<!--                            <strong>{{ profile.talent_category }}</strong>: {{ profile.projects_worked }} ({{ profile.experience }} years)-->
+<!--                        </div>-->
+<!--                        <div class="skill-profile-actions">-->
+<!--                            &lt;!&ndash; Edit Skill Profile &ndash;&gt;-->
+<!--                            <form method="POST" class="inline-form">-->
+<!--                                {% csrf_token %}-->
+<!--                                <button type="submit" name="edit_skill_profile" value="{{ profile.id }}" class="btn btn-warning">Edit</button>-->
+<!--                            </form>-->
 
-            <!-- Skill Profile Form -->
+<!--                            &lt;!&ndash; Delete Skill Profile &ndash;&gt;-->
+<!--                            <form method="POST" class="inline-form">-->
+<!--                                {% csrf_token %}-->
+<!--                                <button type="submit" name="delete_skill_profile" value="{{ profile.id }}" class="btn btn-danger">Delete</button>-->
+<!--                            </form>-->
+<!--                        </div>-->
+<!--                    </li>-->
+<!--                {% empty %}-->
+<!--                    <li>No skill profiles found.</li>-->
+<!--                {% endfor %}-->
+<!--            </ul>-->
+
+<!--            &lt;!&ndash; Add New Skill Profile &ndash;&gt;-->
+<!--            <div class="skill-profile-form-section">-->
+<!--                <h3>Add New Skill Profile</h3>-->
+<!--                <form method="POST" class="skill-profile-form">-->
+<!--                    {% csrf_token %}-->
+<!--                    {{ skill_form.as_p }}-->
+<!--                    <button type="submit" name="add_skill_profile" class="btn btn-success">Add Skill Profile</button>-->
+<!--                </form>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!-- Skill Profiles Section -->
+<div class="skill-profiles-section">
+    <h2>Your Skill Profiles</h2>
+
+    <!-- Display Existing Skill Profiles -->
+    <ul class="skill-profile-list">
+        {% for profile in skill_profiles %}
+            <li class="skill-profile-item">
+                {% if editing_skill and edit_skill_id|stringformat:"s" == profile.id|stringformat:"s" %}
+                    <!-- Edit Form for this Skill Profile -->
+                    <form method="POST" class="skill-edit-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="skill_id" value="{{ profile.id }}">
+                        {{ skill_form.as_p }}
+                        <div class="skill-profile-actions">
+                            <button type="submit" name="save_skill_profile" class="btn btn-primary">Save</button>
+                            <a href="{% url 't_home' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                {% else %}
+                    <div>
+                        <strong>{{ profile.talent_category }}</strong>: {{ profile.projects_worked }} ({{ profile.experience }} years)
+                    </div>
+                    <div class="skill-profile-actions">
+                        <!-- Edit Skill Profile -->
+                        <form method="POST" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" name="edit_skill_profile" value="{{ profile.id }}" class="btn btn-warning">Edit</button>
+                        </form>
+
+                        <!-- Delete Skill Profile -->
+                        <form method="POST" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" name="delete_skill_profile" value="{{ profile.id }}" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li>No skill profiles found.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Add New Skill Profile (only show if not editing) -->
+    {% if not editing_skill %}
+        <div class="skill-profile-form-section">
+            <h3>Add New Skill Profile</h3>
             <form method="POST" class="skill-profile-form">
                 {% csrf_token %}
                 {{ skill_form.as_p }}
                 <button type="submit" name="add_skill_profile" class="btn btn-success">Add Skill Profile</button>
             </form>
-
-            <!-- Display Existing Skill Profiles -->
-            <ul class="skill-profile-list">
-                {% for profile in skill_profiles %}
-                    <li class="skill-profile-item">
-                        <div>
-                            <strong>{{ profile.talent_category }}</strong>: {{ profile.projects_worked }} ({{ profile.experience }} years)
-                        </div>
-                        <div class="skill-profile-actions">
-                            <!-- Edit Skill Profile -->
-                            <form method="POST" class="inline-form">
-                                {% csrf_token %}
-                                <button type="submit" name="edit_skill_profile" value="{{ profile.id }}" class="btn btn-warning">Edit</button>
-                            </form>
-
-                            <!-- Delete Skill Profile -->
-                            <form method="POST" class="inline-form">
-                                {% csrf_token %}
-                                <button type="submit" name="delete_skill_profile" value="{{ profile.id }}" class="btn btn-danger">Delete</button>
-                            </form>
-                        </div>
-                    </li>
-                {% empty %}
-                    <li>No skill profiles found.</li>
-                {% endfor %}
-            </ul>
         </div>
-    </div>
+    {% endif %}
+</div>
 
     <style>
         /* Styling for the container */
@@ -89,16 +177,50 @@
             font-size: 2em;
         }
 
-        /* Section styling */
-        .profile-section, .skill-profiles-section {
-            margin-bottom: 40px;
+        /* Profile Info Box Styling */
+        .profile-info-box {
             padding: 20px;
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
         }
 
-        .profile-section h2, .skill-profiles-section h2 {
+        .profile-info-box h2 {
+            color: #007bff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .profile-info-box p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        /* Profile Picture Styling */
+        .profile-picture-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+        }
+
+        /* Profile Edit Form Styling */
+        .profile-edit-form {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .profile-edit-form h2 {
             color: #007bff;
             font-size: 1.5em;
             margin-bottom: 20px;
@@ -180,9 +302,44 @@
             display: inline;
         }
 
+        .skill-profile-form-section {
+            margin-top: 30px;
+        }
+
         .skill-profile-form {
             margin-bottom: 30px;
         }
+
+        .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+        /* Style for the edit form */
+        .skill-edit-form {
+        width: 100%;
+    }
     </style>
+
+    <script>
+        // Show the profile edit form when the edit button is clicked
+        document.querySelector('button[name="edit_profile"]').addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector('.profile-info-box').style.display = 'none';
+            document.querySelector('.profile-edit-form').style.display = 'block';
+        });
+    </script>
 
 {% endblock %}

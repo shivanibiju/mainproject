@@ -175,6 +175,14 @@ def t_register_view(request):
     return render(request, 't_register.html', {'form': form})
 
 
+from django.contrib.auth import login, authenticate
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.models import User
+from .forms import TLoginForm
+from .models import TalentLogin
+
+
 def t_login_view(request):
     if request.method == 'POST':
         form = TLoginForm(request.POST)
@@ -183,21 +191,36 @@ def t_login_view(request):
             password = form.cleaned_data['password']
 
             try:
-                talent = TalentLogin.objects.get(username=username)
+                # Check if the user already exists in the Django auth system
+                user = User.objects.get(username=username)
 
-                if talent.password == password:
-                    request.session['talent_id'] = talent.id
-                    return redirect('t_home')
+                # If the user exists, authenticate with the password
+                if user.check_password(password):
+                    login(request, user)  # Log the user in
+                    return redirect('t_home')  # Redirect to home page
                 else:
-                    messages.error(request, 'Incorrect password.')
-            except TalentLogin.DoesNotExist:
-                messages.error(request, 'User does not exist.')
+                    messages.error(request, 'Invalid username or password.')
+            except User.DoesNotExist:
+                # If the user doesn't exist, check the TalentLogin model
+                try:
+                    talent = TalentLogin.objects.get(username=username)
 
+                    # Check the password in TalentLogin model
+                    if talent.password == password:  # Assuming password is not hashed
+                        # Create the Django user
+                        user = User.objects.create_user(username=username, password=password)
+                        login(request, user)  # Log the user in
+
+                        # Redirect to the home page
+                        return redirect('t_home')
+                    else:
+                        messages.error(request, 'Invalid username or password.')
+                except TalentLogin.DoesNotExist:
+                    messages.error(request, 'Invalid username or password.')
     else:
         form = TLoginForm()
 
     return render(request, 't_login.html', {'form': form})
-
 
 
 #Free-text search
@@ -494,21 +517,282 @@ from .models import Talent, SkillProfile, TalentLogin
 from .forms import TalentProfileForm, SkillProfileForm
 from django.contrib import messages
 
-# Talent home page
 @login_required
+# def t_home(request):
+#     # Check if the user is authenticated
+#     if request.user.is_authenticated:
+#         print(f"Logged in user: {request.user.username}")
+#     else:
+#         print("User is not logged in.")
+#
+#     # Check the user object
+#     print(f"User: {request.user}")  # Print the request user object
+#
+#     try:
+#         # Fetch TalentLogin object and related Talent object
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         talent = talent_login.talent  # Get the Talent object associated with this login
+#     except TalentLogin.DoesNotExist:
+#         return redirect('t_login')  # Redirect if no TalentLogin found
+
+#     # Get all skill profiles associated with the logged-in talent
+#     skill_profiles = SkillProfile.objects.filter(talent=talent)
+#
+#     # Initialize the talent_form and skill_form for GET requests
+#     talent_form = TalentProfileForm(instance=talent)  # Pre-populate talent form
+#     skill_form = SkillProfileForm()  # Create a new empty form for skill profiles
+#
+#     if request.method == 'POST':
+#         # Handle profile editing
+#         if 'edit_profile' in request.POST:
+#             talent_form = TalentProfileForm(request.POST, instance=talent)
+#             if talent_form.is_valid():
+#                 talent_form.save()
+#                 messages.success(request, "Profile updated successfully.")
+#                 return redirect('t_home')  # Redirect to the same page after saving
+#             else:
+#                 # If form is not valid, print errors for debugging
+#                 print("Form errors:", talent_form.errors)
+#                 messages.error(request, "There was an error with the form. Please check your inputs.")
+#
+#         # Handle profile deletion
+#         elif 'delete_profile' in request.POST:
+#             talent.delete()
+#             messages.success(request, "Profile deleted successfully.")
+#             return redirect('logout')  # Redirect to logout after profile deletion
+#
+#         # Handle adding a new skill profile
+#         elif 'add_skill_profile' in request.POST:
+#             skill_form = SkillProfileForm(request.POST)
+#             if skill_form.is_valid():
+#                 skill_profile = skill_form.save(commit=False)
+#                 skill_profile.talent = talent
+#                 skill_profile.save()
+#                 messages.success(request, "Skill profile added successfully.")
+#                 return redirect('t_home')  # Redirect to the same page after adding skill profile
+#
+#     # Render the talent home page with the talent's profile and skill profiles
+#     return render(request, 't_home.html', {
+#         'talent': talent,
+#         'talent_form': talent_form,
+#         'skill_profiles': skill_profiles,
+#         'skill_form': skill_form,
+#     })
+#
+#
+# # Edit skill profile view
+# def edit_skill_profile(request, id):
+#     # Ensure user is authenticated
+#     if not request.user.is_authenticated:
+#         return redirect('t_login')
+#
+#     # Get the talent associated with the user
+#     try:
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         user_talent = talent_login.talent
+#     except TalentLogin.DoesNotExist:
+#         return redirect('t_login')
+#
+#     # Fetch skill profile to edit
+#     skill_profile = get_object_or_404(SkillProfile, id=id)
+#
+#     # Security check: ensure the skill belongs to the logged-in talent
+#     if skill_profile.talent != user_talent:
+#         messages.error(request, "You don't have permission to edit this skill profile.")
+#         return redirect('t_home')
+#
+#     if request.method == 'POST':
+#         # Handle skill profile update
+#         form = SkillProfileForm(request.POST, instance=skill_profile)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Skill profile updated successfully.")
+#             return redirect('t_home')
+#         else:
+#             messages.error(request, "There was an error with the form. Please check your inputs.")
+#     else:
+#         # Pre-populate the form with skill profile data for editing
+#         form = SkillProfileForm(instance=skill_profile)
+#
+#     return render(request, 'edit_skill_profile.html', {'form': form, 'skill_profile': skill_profile})
+#
+#
+# # Delete skill profile view
+# def delete_skill_profile(request, id):
+#     # Ensure user is authenticated
+#     if not request.user.is_authenticated:
+#         return redirect('t_login')
+#
+#     # Get the talent associated with the user
+#     try:
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         user_talent = talent_login.talent
+#     except TalentLogin.DoesNotExist:
+#         return redirect('t_login')
+#
+#     # Fetch skill profile to delete
+#     skill_profile = get_object_or_404(SkillProfile, id=id)
+#
+#     # Security check: ensure the skill belongs to the logged-in talent
+#     if skill_profile.talent != user_talent:
+#         messages.error(request, "You don't have permission to delete this skill profile.")
+#         return redirect('t_home')
+#
+#     if request.method == 'POST':
+#         skill_profile.delete()
+#         messages.success(request, "Skill profile deleted successfully.")
+#     else:
+#         # If someone tries to access this URL directly via GET, redirect them
+#         messages.error(request, "Invalid request method for deleting skill profile.")
+#
+#     return redirect('t_home')
+
+# def t_home(request):
+#     # Check if the user is authenticated
+#     if request.user.is_authenticated:
+#         print(f"Logged in user: {request.user.username}")
+#     else:
+#         print("User is not logged in.")
+#         return redirect('t_login')  # Redirect if not logged in
+#
+#     # Check the user object
+#     print(f"User: {request.user}")  # Print the request user object
+#
+#     try:
+#         # Fetch TalentLogin object and related Talent object
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         talent = talent_login.talent  # Get the Talent object associated with this login
+#     except TalentLogin.DoesNotExist:
+#         return redirect('t_login')  # Redirect if no TalentLogin found
+#
+#     # Get all skill profiles associated with the logged-in talent
+#     skill_profiles = SkillProfile.objects.filter(talent=talent)
+#
+#     # Initialize the talent_form and skill_form for GET requests
+#     talent_form = TalentProfileForm(instance=talent)  # Pre-populate talent form
+#     skill_form = SkillProfileForm()  # Create a new empty form for skill profiles
+#
+#     if request.method == 'POST':
+#         # Handle profile editing
+#         if 'edit_profile' in request.POST:
+#             talent_form = TalentProfileForm(request.POST, instance=talent)
+#             if talent_form.is_valid():
+#                 talent_form.save()
+#                 messages.success(request, "Profile updated successfully.")
+#                 return redirect('t_home')  # Redirect to the same page after saving
+#             else:
+#                 # If form is not valid, print errors for debugging
+#                 print("Form errors:", talent_form.errors)
+#                 messages.error(request, "There was an error with the form. Please check your inputs.")
+#
+#         # Handle profile deletion
+#         elif 'delete_profile' in request.POST:
+#             talent.delete()
+#             messages.success(request, "Profile deleted successfully.")
+#             return redirect('logout')  # Redirect to logout after profile deletion
+#
+#         # Handle adding a new skill profile
+#         elif 'add_skill_profile' in request.POST:
+#             skill_form = SkillProfileForm(request.POST)
+#             if skill_form.is_valid():
+#                 skill_profile = skill_form.save(commit=False)
+#                 skill_profile.talent = talent
+#                 skill_profile.save()
+#                 messages.success(request, "Skill profile added successfully.")
+#                 return redirect('t_home')  # Redirect to the same page after adding skill profile
+#
+#         # Handle editing an existing skill profile directly in t_home
+#         elif 'edit_skill_profile' in request.POST:
+#             skill_id = request.POST.get('skill_id')
+#             try:
+#                 skill_profile = SkillProfile.objects.get(id=skill_id, talent=talent)
+#                 skill_form = SkillProfileForm(request.POST, instance=skill_profile)
+#                 if skill_form.is_valid():
+#                     skill_form.save()
+#                     messages.success(request, "Skill profile updated successfully.")
+#                     return redirect('t_home')
+#                 else:
+#                     messages.error(request, "There was an error with the form. Please check your inputs.")
+#             except SkillProfile.DoesNotExist:
+#                 messages.error(request, "Skill profile not found.")
+#
+#         # Handle deleting an existing skill profile directly in t_home
+#         elif 'delete_skill_profile' in request.POST:
+#             skill_id = request.POST.get('skill_id')
+#             try:
+#                 skill_profile = SkillProfile.objects.get(id=skill_id, talent=talent)
+#                 skill_profile.delete()
+#                 messages.success(request, "Skill profile deleted successfully.")
+#                 return redirect('t_home')
+#             except SkillProfile.DoesNotExist:
+#                 messages.error(request, "Skill profile not found.")
+#
+#     # Render the talent home page with the talent's profile and skill profiles
+#     return render(request, 't_home.html', {
+#         'talent': talent,
+#         'talent_form': talent_form,
+#         'skill_profiles': skill_profiles,
+#         'skill_form': skill_form,
+#     })
+#
+#
+# # These separate views can remain as alternatives or be removed if you decide to handle everything in t_home
+# def edit_skill_profile(request, id):
+#     if not request.user.is_authenticated:
+#         return redirect('t_login')
+#
+#     try:
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         talent = talent_login.talent
+#         skill_profile = get_object_or_404(SkillProfile, id=id, talent=talent)
+#     except (TalentLogin.DoesNotExist, SkillProfile.DoesNotExist):
+#         messages.error(request, "Skill profile not found or you don't have permission to edit it.")
+#         return redirect('t_home')
+#
+#     if request.method == 'POST':
+#         form = SkillProfileForm(request.POST, instance=skill_profile)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Skill profile updated successfully.")
+#             return redirect('t_home')
+#         else:
+#             messages.error(request, "There was an error with the form. Please check your inputs.")
+#     else:
+#         form = SkillProfileForm(instance=skill_profile)
+#
+#     return render(request, 'edit_skill_profile.html', {'form': form, 'skill_profile': skill_profile})
+#
+#
+# def delete_skill_profile(request, id):
+#     if not request.user.is_authenticated:
+#         return redirect('t_login')
+#
+#     try:
+#         talent_login = TalentLogin.objects.get(username=request.user.username)
+#         talent = talent_login.talent
+#         skill_profile = get_object_or_404(SkillProfile, id=id, talent=talent)
+#     except (TalentLogin.DoesNotExist, SkillProfile.DoesNotExist):
+#         messages.error(request, "Skill profile not found or you don't have permission to delete it.")
+#         return redirect('t_home')
+#
+#     if request.method == 'POST':
+#         skill_profile.delete()
+#         messages.success(request, "Skill profile deleted successfully.")
+#     else:
+#         messages.error(request, "Invalid request method for deleting skill profile.")
+#
+#     return redirect('t_home')
+
 def t_home(request):
-    # Fetch TalentLogin object related to the logged-in user
-
     # Check if the user is authenticated
-    if request.user.is_authenticated:
-        print(f"Logged in user: {request.user.username}")
-    else:
+    if not request.user.is_authenticated:
         print("User is not logged in.")
+        return redirect('t_login')
 
-    # Check the user object
-    print(f"User: {request.user}")  # Print the request user object
+    print(f"Logged in user: {request.user.username}")
 
     try:
+        # Fetch TalentLogin object and related Talent object
         talent_login = TalentLogin.objects.get(username=request.user.username)
         talent = talent_login.talent  # Get the Talent object associated with this login
     except TalentLogin.DoesNotExist:
@@ -517,14 +801,27 @@ def t_home(request):
     # Get all skill profiles associated with the logged-in talent
     skill_profiles = SkillProfile.objects.filter(talent=talent)
 
+    # Initialize the talent_form and skill_form for GET requests
+    talent_form = TalentProfileForm(instance=talent)  # Pre-populate talent form
+    skill_form = SkillProfileForm()  # Create a new empty form for skill profiles
+
+    # For debugging
+    print(f"Request method: {request.method}")
+    if request.method == 'POST':
+        print(f"POST data: {request.POST}")
+
     if request.method == 'POST':
         # Handle profile editing
         if 'edit_profile' in request.POST:
-            form = TalentProfileForm(request.POST, instance=talent)
-            if form.is_valid():
-                form.save()
+            talent_form = TalentProfileForm(request.POST, instance=talent)
+            if talent_form.is_valid():
+                talent_form.save()
                 messages.success(request, "Profile updated successfully.")
                 return redirect('t_home')  # Redirect to the same page after saving
+            else:
+                # If form is not valid, print errors for debugging
+                print("Form errors:", talent_form.errors)
+                messages.error(request, "There was an error with the form. Please check your inputs.")
 
         # Handle profile deletion
         elif 'delete_profile' in request.POST:
@@ -544,26 +841,77 @@ def t_home(request):
 
         # Handle editing an existing skill profile
         elif 'edit_skill_profile' in request.POST:
+            skill_id = request.POST.get('edit_skill_profile')  # Get value from button
+            print(f"Editing skill profile with ID: {skill_id}")
+
+            if not skill_id:
+                messages.error(request, "No skill ID provided for editing.")
+                return redirect('t_home')
+
+            try:
+                skill_profile = SkillProfile.objects.get(id=skill_id, talent=talent)
+                # Render the edit form for this skill profile
+                skill_form = SkillProfileForm(instance=skill_profile)
+                return render(request, 't_home.html', {
+                    'talent': talent,
+                    'talent_form': talent_form,
+                    'skill_profiles': skill_profiles,
+                    'skill_form': skill_form,
+                    'edit_skill_id': skill_id,  # Indicate which skill is being edited
+                    'editing_skill': True,
+                })
+            except SkillProfile.DoesNotExist:
+                messages.error(request, "Skill profile not found.")
+            except Exception as e:
+                print(f"Error editing skill profile: {str(e)}")
+                messages.error(request, f"Error editing skill profile: {str(e)}")
+
+            return redirect('t_home')
+
+        # Handle saving an edited skill profile
+        elif 'save_skill_profile' in request.POST:
             skill_id = request.POST.get('skill_id')
-            skill_profile = get_object_or_404(SkillProfile, id=skill_id)
-            skill_form = SkillProfileForm(request.POST, instance=skill_profile)
-            if skill_form.is_valid():
-                skill_form.save()
-                messages.success(request, "Skill profile updated successfully.")
-                return redirect('t_home')  # Redirect to the same page after editing skill profile
+
+            if not skill_id:
+                messages.error(request, "No skill ID provided for saving.")
+                return redirect('t_home')
+
+            try:
+                skill_profile = SkillProfile.objects.get(id=skill_id, talent=talent)
+                skill_form = SkillProfileForm(request.POST, instance=skill_profile)
+
+                if skill_form.is_valid():
+                    skill_form.save()
+                    messages.success(request, "Skill profile updated successfully.")
+                else:
+                    print(f"Skill form errors: {skill_form.errors}")
+                    messages.error(request, f"Form validation errors: {skill_form.errors}")
+            except Exception as e:
+                print(f"Error saving skill profile: {str(e)}")
+                messages.error(request, f"Error saving skill profile: {str(e)}")
+
+            return redirect('t_home')
 
         # Handle deleting an existing skill profile
         elif 'delete_skill_profile' in request.POST:
-            skill_id = request.POST.get('skill_id')
-            skill_profile = get_object_or_404(SkillProfile, id=skill_id)
-            skill_profile.delete()
-            messages.success(request, "Skill profile deleted successfully.")
-            return redirect('t_home')  # Redirect to the same page after deleting skill profile
+            skill_id = request.POST.get('delete_skill_profile')  # Get value from button
+            print(f"Deleting skill profile with ID: {skill_id}")
 
-    else:
-        # Pre-populate the talent profile form for editing
-        talent_form = TalentProfileForm(instance=talent)
-        skill_form = SkillProfileForm()
+            if not skill_id:
+                messages.error(request, "No skill ID provided for deletion.")
+                return redirect('t_home')
+
+            try:
+                skill_profile = SkillProfile.objects.get(id=skill_id, talent=talent)
+                skill_profile.delete()
+                messages.success(request, "Skill profile deleted successfully.")
+            except SkillProfile.DoesNotExist:
+                messages.error(request, "Skill profile not found.")
+            except Exception as e:
+                print(f"Error deleting skill profile: {str(e)}")
+                messages.error(request, f"Error deleting skill profile: {str(e)}")
+
+            return redirect('t_home')
 
     # Render the talent home page with the talent's profile and skill profiles
     return render(request, 't_home.html', {
@@ -572,31 +920,3 @@ def t_home(request):
         'skill_profiles': skill_profiles,
         'skill_form': skill_form,
     })
-
-# Edit skill profile view
-def edit_skill_profile(request, id):
-    # Fetch skill profile to edit
-    skill_profile = get_object_or_404(SkillProfile, id=id)
-
-    if request.method == 'POST':
-        # Handle skill profile update
-        form = SkillProfileForm(request.POST, instance=skill_profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Skill profile updated successfully.")
-            return redirect('t_home')
-
-    else:
-        # Pre-populate the form with skill profile data for editing
-        form = SkillProfileForm(instance=skill_profile)
-
-    return render(request, 'edit_skill_profile.html', {'form': form})
-
-# Delete skill profile view
-def delete_skill_profile(request, id):
-    # Fetch skill profile to delete
-    skill_profile = get_object_or_404(SkillProfile, id=id)
-    skill_profile.delete()
-    messages.success(request, "Skill profile deleted successfully.")
-    return redirect('t_home')
-

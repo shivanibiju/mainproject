@@ -28,8 +28,8 @@ urlpatterns = [
     path('t_register/', views.t_register_view, name='t_register'),
     path('t_login/', views.t_login_view, name='t_login'),
     path('t_home/', views.t_home, name='t_home'),
-    path('skill_profile/edit/<int:id>/', views.edit_skill_profile, name='edit_skill_profile'),
-    path('skill_profile/delete/<int:id>/', views.delete_skill_profile, name='delete_skill_profile'),
+    # path('skill_profile/edit/<int:id>/', views.edit_skill_profile, name='edit_skill_profile'),
+    # path('skill_profile/delete/<int:id>/', views.delete_skill_profile, name='delete_skill_profile'),
 ]
 
 from django.conf import settings
