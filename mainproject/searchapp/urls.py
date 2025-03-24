@@ -18,8 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views
 from .views import register_view
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+    path('', views.index, name='index'),
+    path('styles/', views.styles, name='styles'),
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('search/', views.search_view, name='search'),
@@ -28,8 +31,7 @@ urlpatterns = [
     path('t_register/', views.t_register_view, name='t_register'),
     path('t_login/', views.t_login_view, name='t_login'),
     path('t_home/', views.t_home, name='t_home'),
-    # path('skill_profile/edit/<int:id>/', views.edit_skill_profile, name='edit_skill_profile'),
-    # path('skill_profile/delete/<int:id>/', views.delete_skill_profile, name='delete_skill_profile'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
 
 from django.conf import settings
