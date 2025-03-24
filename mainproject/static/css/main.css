@@ -1038,6 +1038,57 @@ input::-moz-focus-inner {
  *
  * ------------------------------------------------------------------- */
 
+/* .login-wrap: Center the content and ensure the boxes are aligned */
+.login-wrap {
+    display: flex;
+    flex-direction: column;  /* Stack boxes vertically on smaller screens */
+    align-items: center; /* Center the boxes horizontally */
+    justify-content: center; /* Vertically center the content */
+    gap: 20px; /* Add a small gap between the stacked boxes */
+    margin-top: 40px;
+}
+
+/* Style for each individual box */
+.login-box {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;  /* Initially set to 80% for decent size */
+    max-width: 350px; /* Set a maximum width for the boxes */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    box-sizing: border-box; /* Ensures padding is inside the width */
+}
+
+/* Title inside each box */
+.box-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #333; /* Dark color for the title */
+}
+
+/* Subheading inside each box */
+.box-subhead {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #555; /* Light gray for the subheading */
+}
+
+/* Button styling */
+.login-box a.btn {
+    margin-top: 20px;
+}
+
+/* On smaller screens, stack the boxes and make them smaller */
+@media (max-width: 768px) {
+    .login-box {
+        width: 90%;  /* Increase the width to make the boxes smaller and centered */
+        max-width: 320px; /* Set a max-width for smaller boxes */
+    }
+}
+
+
+
 /* ------------------------------------------------------------------- 
  * ## alert box - (_alert-box.scss)
  * ------------------------------------------------------------------- */
@@ -1671,7 +1722,7 @@ body.menu-is-open {
 
 .header-logo img {
   width: 155px;
-  height: 36px;
+  height: 100px;
 }
 
 /* ------------------------------------------------------------------- 

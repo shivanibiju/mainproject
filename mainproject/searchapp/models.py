@@ -1,3 +1,18 @@
+from django.contrib.auth.models import User
+from django.db import models
+
+class TalentLogin(models.Model):
+    username = models.CharField(max_length=100)
+    password = models.CharField(max_length=100)  # Plain-text password
+    talent = models.ForeignKey('Talent', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)  # Link to the User model
+
+    def __str__(self):
+        return self.username
+
+    class Meta:
+        db_table = 'TalentLogin'
+
 from django.db import models
 
 class ProfilePicture(models.Model):
@@ -85,17 +100,3 @@ class SearchHistory(models.Model):
     class Meta:
         db_table = 'SearchHistory'
 
-from django.contrib.auth.models import User
-from django.db import models
-
-class TalentLogin(models.Model):
-    username = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)  # Plain-text password
-    talent = models.ForeignKey('Talent', on_delete=models.CASCADE, null=True, blank=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)  # Link to the User model
-
-    def __str__(self):
-        return self.username
-
-    class Meta:
-        db_table = 'TalentLogin'
